@@ -62,10 +62,16 @@ If you are not running as root and `networkctl` requires privileges, `ethtui` wi
 
 ## Omarchy Integration
 
-Omarchy typically launches TUIs with:
+This is optional. `ethtui` works on any Linux distro that provides the standard kernel interfaces
+used above. The DHCP renew action is `systemd-networkd`-oriented (it uses `networkctl`).
+
+If you're on Omarchy, it typically launches TUIs with:
 
 ```bash
 omarchy-launch-or-focus-tui ethtui
 ```
 
 This opens the terminal with `--app-id=org.omarchy.ethtui`, allowing consistent window rules.
+
+If Omarchy's `omarchy-launch-ethernet` prefers `ethtui` when installed, simply installing
+`ethtui` (or `ethtui-bin`) via AUR is enough for it to be picked up automatically.
