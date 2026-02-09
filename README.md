@@ -9,6 +9,28 @@ other pythops TUIs (e.g. `impala`, `bluetui`).
 - No root required for read-only status
 - Works with Omarchy's current integration model (run in terminal via `xdg-terminal-exec`)
 
+## Scope
+
+- Lists physical, non-wifi interfaces only (`/sys/class/net/*/device`, excluding `wireless/phy80211`).
+- Read-only status always works without privileges.
+- DHCP actions are best-effort and depend on your network stack (see below).
+
+## Installation
+
+### Binary release
+
+Download the `ethtui-vX.Y.Z-x86_64.tar.gz` artifact from GitHub Releases and install `ethtui` to a
+directory in your `$PATH` (e.g. `~/.local/bin`).
+
+### Build from source
+
+```bash
+git clone https://github.com/skibidiandulka/ethtui
+cd ethtui
+cargo build --release
+./target/release/ethtui
+```
+
 ## Data Sources
 
 To stay robust and avoid parsing shell output, `ethtui` reads:
@@ -18,18 +40,25 @@ To stay robust and avoid parsing shell output, `ethtui` reads:
 - `getifaddrs(3)` (via `if-addrs`) for IP addresses
 - `/etc/resolv.conf` for DNS servers
 
-## Run
+## Usage
 
-```bash
-cargo run
-```
+Minimum terminal size is `80x24`.
 
-Keys:
+Keys (vim-style, plus arrows):
 
-- `j`/`k` or arrows: move selection
+- `j`/`k` or `↑`/`↓`: move selection
 - `r`: refresh
-- `n`: renew DHCP (systemd-networkd / networkctl)
+- `n`: renew DHCP (best-effort)
 - `q` or `Esc`: quit
+
+## DHCP Renew Notes
+
+When you press `n`, `ethtui` runs `networkctl renew <iface>` and shows a before/after snapshot
+in-app. If nothing changes, it may still have renewed the lease (it's common for IP/GW/DNS to stay
+the same).
+
+If you are not running as root and `networkctl` requires privileges, `ethtui` will try `sudo -n`
+(non-interactive). If that fails, you will see an error popup.
 
 ## Omarchy Integration
 
