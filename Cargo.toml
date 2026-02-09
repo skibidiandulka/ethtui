@@ -2,6 +2,9 @@
 name = "ethtui"
 version = "0.1.0"
 edition = "2024"
+description = "TUI for Ethernet status (Omarchy-style)"
+license = "GPL-3.0-only"
+repository = "https://github.com/skibidiandulka/ethtui"
 
 [dependencies]
 anyhow = "1.0"
