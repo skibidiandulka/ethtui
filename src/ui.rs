@@ -10,21 +10,17 @@ use ratatui::{
 pub fn render(app: &mut App, frame: &mut Frame) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5), Constraint::Length(2)])
+        .constraints([
+            Constraint::Min(10),   // details
+            Constraint::Length(8), // interfaces
+            Constraint::Length(2), // footer
+        ])
         .margin(1)
         .split(frame.area());
 
-    let body = chunks[0];
-    let footer = chunks[1];
-
-    let body_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(34), Constraint::Min(10)])
-        .split(body);
-
-    render_devices(app, frame, body_chunks[0]);
-    render_details(app, frame, body_chunks[1]);
-    render_footer(app, frame, footer);
+    render_details(app, frame, chunks[0]);
+    render_devices(app, frame, chunks[1]);
+    render_footer(frame, chunks[2]);
 
     if let Some(err) = &app.last_error {
         render_error_popup(frame, err);
@@ -47,6 +43,7 @@ fn render_devices(app: &mut App, frame: &mut Frame, area: Rect) {
                 Cell::from(d.operstate.clone()),
                 Cell::from(carrier),
                 Cell::from(speed),
+                Cell::from(d.ipv4.get(0).cloned().unwrap_or_else(|| "-".into())),
             ])
         })
         .collect();
@@ -56,6 +53,7 @@ fn render_devices(app: &mut App, frame: &mut Frame, area: Rect) {
         Constraint::Length(9),
         Constraint::Length(7),
         Constraint::Length(7),
+        Constraint::Min(10),
     ];
 
     let table = Table::new(rows, widths)
@@ -65,13 +63,14 @@ fn render_devices(app: &mut App, frame: &mut Frame, area: Rect) {
                 Cell::from("State").style(Style::default().fg(Color::Yellow)),
                 Cell::from("Carrier").style(Style::default().fg(Color::Yellow)),
                 Cell::from("Speed").style(Style::default().fg(Color::Yellow)),
+                Cell::from("IPv4").style(Style::default().fg(Color::Yellow)),
             ])
             .style(Style::new().bold())
             .bottom_margin(1),
         )
         .block(
             Block::default()
-                .title(" Ethernet ")
+                .title(" Interfaces ")
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::Green))
                 .border_type(BorderType::Thick),
@@ -82,8 +81,14 @@ fn render_devices(app: &mut App, frame: &mut Frame, area: Rect) {
 }
 
 fn render_details(app: &mut App, frame: &mut Frame, area: Rect) {
+    let title = if let Some(d) = app.selected_device() {
+        format!(" Details ({}) ", d.name)
+    } else {
+        " Details ".to_string()
+    };
+
     let block = Block::default()
-        .title(" Details ")
+        .title(title)
         .borders(Borders::ALL)
         .border_style(Style::default())
         .border_type(BorderType::default());
@@ -94,10 +99,6 @@ fn render_details(app: &mut App, frame: &mut Frame, area: Rect) {
     let text = if let Some(d) = app.selected_device() {
         let mut lines = Vec::new();
 
-        lines.push(Line::from(vec![
-            Span::from("Interface: ").bold(),
-            Span::from(d.name.clone()),
-        ]));
         lines.push(Line::from(vec![
             Span::from("State: ").bold(),
             Span::from(d.operstate.clone()),
@@ -160,6 +161,14 @@ fn render_details(app: &mut App, frame: &mut Frame, area: Rect) {
             }
         }
 
+        if let Some(msg) = &app.last_action {
+            lines.push(Line::from(""));
+            lines.push(Line::from(vec![
+                Span::from("Last: ").bold(),
+                Span::from(msg.clone()).fg(Color::Cyan),
+            ]));
+        }
+
         Text::from(lines)
     } else {
         Text::from(vec![
@@ -175,19 +184,30 @@ fn render_details(app: &mut App, frame: &mut Frame, area: Rect) {
     frame.render_widget(p, inner);
 }
 
-fn render_footer(_app: &App, frame: &mut Frame, area: Rect) {
+fn render_footer(frame: &mut Frame, area: Rect) {
     let text = Line::from(vec![
         Span::from("j/k").bold(),
-        Span::from(" move  "),
+        Span::from(" move"),
+        Span::from(" | "),
         Span::from("r").bold(),
-        Span::from(" refresh  "),
+        Span::from(" refresh"),
+        Span::from(" | "),
+        Span::from("u").bold(),
+        Span::from(" up"),
+        Span::from(" | "),
+        Span::from("d").bold(),
+        Span::from(" down"),
+        Span::from(" | "),
+        Span::from("n").bold(),
+        Span::from(" renew"),
+        Span::from(" | "),
         Span::from("q").bold(),
         Span::from(" quit"),
     ]);
 
     let p = Paragraph::new(text)
         .alignment(Alignment::Left)
-        .style(Style::default().fg(Color::DarkGray));
+        .style(Style::default().fg(Color::Cyan));
     frame.render_widget(p, area);
 }
 
@@ -231,3 +251,4 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         ])
         .split(popup_layout[1])[1]
 }
+
