@@ -16,22 +16,6 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> Result<()>
             app.tick().await?;
         }
 
-        KeyCode::Char('u') => {
-            if let Err(e) = app.link_up().await {
-                app.last_error = Some(e.to_string());
-            } else {
-                let _ = app.tick().await;
-            }
-        }
-
-        KeyCode::Char('d') => {
-            if let Err(e) = app.link_down().await {
-                app.last_error = Some(e.to_string());
-            } else {
-                let _ = app.tick().await;
-            }
-        }
-
         KeyCode::Char('n') => {
             if let Err(e) = app.renew_dhcp().await {
                 app.last_error = Some(e.to_string());

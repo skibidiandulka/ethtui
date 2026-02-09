@@ -182,6 +182,16 @@ impl App {
 
         self.run_privileged("networkctl", &["renew", &iface]).await?;
         self.last_action = Some(format!("Renewed DHCP on {iface}"));
+
+        // Best-effort desktop notification (Omarchy uses mako).
+        // If notify-send isn't available or there's no session bus, ignore.
+        let _ = Command::new("notify-send")
+            .arg("󰀂    Ethernet")
+            .arg(format!("Renewed DHCP on {iface}"))
+            .arg("-t")
+            .arg("2000")
+            .output()
+            .await;
         Ok(())
     }
 }

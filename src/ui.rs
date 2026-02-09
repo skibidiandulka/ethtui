@@ -37,8 +37,14 @@ fn render_devices(app: &mut App, frame: &mut Frame, area: Rect) {
                 .speed_mbps
                 .map(|s| format!("{s}"))
                 .unwrap_or_else(|| "-".into());
+            let connected = if d.carrier == Some(true) && !d.ipv4.is_empty() {
+                "󰀂".to_string()
+            } else {
+                "".to_string()
+            };
 
             Row::new(vec![
+                Cell::from(connected),
                 Cell::from(d.name.clone()),
                 Cell::from(d.operstate.clone()),
                 Cell::from(carrier),
@@ -49,6 +55,7 @@ fn render_devices(app: &mut App, frame: &mut Frame, area: Rect) {
         .collect();
 
     let widths = [
+        Constraint::Length(2),
         Constraint::Length(10),
         Constraint::Length(9),
         Constraint::Length(7),
@@ -59,6 +66,7 @@ fn render_devices(app: &mut App, frame: &mut Frame, area: Rect) {
     let table = Table::new(rows, widths)
         .header(
             Row::new(vec![
+                Cell::from("").style(Style::default().fg(Color::Yellow)),
                 Cell::from("Iface").style(Style::default().fg(Color::Yellow)),
                 Cell::from("State").style(Style::default().fg(Color::Yellow)),
                 Cell::from("Carrier").style(Style::default().fg(Color::Yellow)),
@@ -112,6 +120,10 @@ fn render_details(app: &mut App, frame: &mut Frame, area: Rect) {
                     .to_string(),
             ),
         ]));
+        lines.push(Line::from(Span::from(
+            "  Carrier is 1 when link is detected (cable plugged / switch port up).",
+        )
+        .fg(Color::DarkGray)));
         lines.push(Line::from(vec![
             Span::from("Speed: ").bold(),
             Span::from(
@@ -192,12 +204,6 @@ fn render_footer(frame: &mut Frame, area: Rect) {
         Span::from("r").bold(),
         Span::from(" refresh"),
         Span::from(" | "),
-        Span::from("u").bold(),
-        Span::from(" up"),
-        Span::from(" | "),
-        Span::from("d").bold(),
-        Span::from(" down"),
-        Span::from(" | "),
         Span::from("n").bold(),
         Span::from(" renew"),
         Span::from(" | "),
@@ -206,7 +212,7 @@ fn render_footer(frame: &mut Frame, area: Rect) {
     ]);
 
     let p = Paragraph::new(text)
-        .alignment(Alignment::Left)
+        .alignment(Alignment::Center)
         .style(Style::default().fg(Color::Cyan));
     frame.render_widget(p, area);
 }
@@ -251,4 +257,3 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         ])
         .split(popup_layout[1])[1]
 }
-
