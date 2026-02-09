@@ -28,6 +28,7 @@ Keys:
 
 - `j`/`k` or arrows: move selection
 - `r`: refresh
+- `n`: renew DHCP (systemd-networkd / networkctl)
 - `q` or `Esc`: quit
 
 ## Omarchy Integration
@@ -39,4 +40,3 @@ omarchy-launch-or-focus-tui ethtui
 ```
 
 This opens the terminal with `--app-id=org.omarchy.ethtui`, allowing consistent window rules.
-
