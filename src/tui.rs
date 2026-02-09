@@ -34,4 +34,3 @@ impl<B: Backend> Tui<B> {
         Ok(())
     }
 }
-

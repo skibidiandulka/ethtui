@@ -70,4 +70,3 @@ impl EventHandler {
             .ok_or_else(|| std::io::Error::other("event stream closed").into())
     }
 }
-

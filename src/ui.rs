@@ -8,6 +8,15 @@ use ratatui::{
 };
 
 pub fn render(app: &mut App, frame: &mut Frame) {
+    const MIN_W: u16 = 80;
+    const MIN_H: u16 = 24;
+
+    let area = frame.area();
+    if area.width < MIN_W || area.height < MIN_H {
+        render_too_small(frame, area, MIN_W, MIN_H);
+        return;
+    }
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -24,6 +33,11 @@ pub fn render(app: &mut App, frame: &mut Frame) {
 
     if let Some(err) = &app.last_error {
         render_error_popup(frame, err);
+        return;
+    }
+
+    if let Some(t) = &app.toast {
+        render_toast_popup(frame, t.kind, &t.msg);
     }
 }
 
@@ -49,7 +63,7 @@ fn render_devices(app: &mut App, frame: &mut Frame, area: Rect) {
                 Cell::from(d.operstate.clone()),
                 Cell::from(carrier),
                 Cell::from(speed),
-                Cell::from(d.ipv4.get(0).cloned().unwrap_or_else(|| "-".into())),
+                Cell::from(d.ipv4.first().cloned().unwrap_or_else(|| "-".into())),
             ])
         })
         .collect();
@@ -120,10 +134,10 @@ fn render_details(app: &mut App, frame: &mut Frame, area: Rect) {
                     .to_string(),
             ),
         ]));
-        lines.push(Line::from(Span::from(
-            "  Carrier is 1 when link is detected (cable plugged / switch port up).",
-        )
-        .fg(Color::DarkGray)));
+        lines.push(Line::from(
+            Span::from("  Carrier is 1 when link is detected (cable plugged / switch port up).")
+                .fg(Color::DarkGray),
+        ));
         lines.push(Line::from(vec![
             Span::from("Speed: ").bold(),
             Span::from(
@@ -198,8 +212,15 @@ fn render_details(app: &mut App, frame: &mut Frame, area: Rect) {
 
 fn render_footer(frame: &mut Frame, area: Rect) {
     let text = Line::from(vec![
-        Span::from("j/k").bold(),
-        Span::from(" move"),
+        Span::from("k").bold(),
+        Span::from(","),
+        Span::from("↑").bold(),
+        Span::from(" up"),
+        Span::from(" | "),
+        Span::from("j").bold(),
+        Span::from(","),
+        Span::from("↓").bold(),
+        Span::from(" down"),
         Span::from(" | "),
         Span::from("r").bold(),
         Span::from(" refresh"),
@@ -215,6 +236,26 @@ fn render_footer(frame: &mut Frame, area: Rect) {
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::Cyan));
     frame.render_widget(p, area);
+}
+
+fn render_too_small(frame: &mut Frame, area: Rect, min_w: u16, min_h: u16) {
+    let block = Block::default()
+        .title(" ethtui ")
+        .borders(Borders::ALL)
+        .border_type(BorderType::Thick)
+        .border_style(Style::default().fg(Color::Yellow));
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let msg = format!(
+        "Terminal is too small.\n\nMinimum size: {}x{}\nCurrent size:  {}x{}",
+        min_w, min_h, area.width, area.height
+    );
+    let p = Paragraph::new(msg)
+        .alignment(Alignment::Center)
+        .style(Style::default().fg(Color::White))
+        .wrap(ratatui::widgets::Wrap { trim: true });
+    frame.render_widget(p, inner);
 }
 
 fn render_error_popup(frame: &mut Frame, msg: &str) {
@@ -235,6 +276,32 @@ fn render_error_popup(frame: &mut Frame, msg: &str) {
         .style(Style::default().fg(Color::White))
         .wrap(ratatui::widgets::Wrap { trim: true });
 
+    frame.render_widget(p, inner);
+}
+
+fn render_toast_popup(frame: &mut Frame, kind: crate::app::ToastKind, msg: &str) {
+    let (title, color) = match kind {
+        crate::app::ToastKind::Success => (" Success ", Color::Green),
+        crate::app::ToastKind::Error => (" Error ", Color::Red),
+        crate::app::ToastKind::Info => (" Info ", Color::Cyan),
+    };
+
+    let area = centered_rect(80, 28, frame.area());
+    frame.render_widget(Clear, area);
+
+    let block = Block::default()
+        .title(title)
+        .borders(Borders::ALL)
+        .border_type(BorderType::Thick)
+        .border_style(Style::default().fg(color));
+
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let p = Paragraph::new(msg)
+        .alignment(Alignment::Left)
+        .style(Style::default().fg(Color::White))
+        .wrap(ratatui::widgets::Wrap { trim: false });
     frame.render_widget(p, inner);
 }
 
